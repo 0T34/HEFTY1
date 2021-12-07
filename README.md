@@ -1,68 +1,40 @@
-Heavycoin
-================================
-
-http://heavycoin.github.io
-
-Copyright (c) 2014 The Heavycoin developers,
-(c) 2009-2014 Bitcoin Developers
-
-What is Heavycoin?
-----------------
-
-Heavycoin is an Ultra-secure, Democratic and ASIC-resistant Crypto-currency.
-
-For more information, as well as an immediately useable, binary version of
-the Heavycoin client sofware, see http://heavycoin.github.io.
-
-Innovations and contributions
--------
-
-* Achieve massive adoption as a major crypto-currency
-* Provide long-term open source development, support and maintenance
-* Promote a large-scale decentralized mining community
-* Build a gigantic community of stakeholders from a diverse set backgrounds
-* Promote the use of democratic processes in peer-to-peer systems using decentralized block reward voting
-
-Goals
--------------------
-
-* Achieve massive adoption as a major crypto-currency
-* Provide long-term open source development, support and maintenance
-* Promote a large-scale decentralized mining community
-* Build a gigantic community of stakeholders from a diverse set backgrounds
-* Promote the use of democratic processes in peer-to-peer systems using decentralized block reward voting
-
-Specifications
--------
-
-* ASIC-resistant: Introduces HEFTY1 a cryptographic hash function for ASIC-resistant proof-of-work
-* Ultra-secure: combines SHA-256, Keccak-512, Grøestl-512, BLAKE-512 in a secure way
-* Block time: 2 Min
-* Retarget up: Every 5 blocks (max 100%)
-* Retarget down: Every block (max 400%)
-* Starting block reward: 0 (for first 100 blocks ~ 3.3 hours)
-* Block reward: 1024 max (decentralized block reward voting)
-* Total supply: 63M to 128M HVC (depending on decentralized block reward voting)
-* Multipool protection: Kimoto Gravity Well Temporal Retargeting
-* Premine: 1-2% (depending on total supply) for future development, support and maintenance
-* Bounties: 1-2% (depending on total supply) for strategic direction and promoting of heavycoin
-* IPO: 4-8% (depending on total supply) already distributed over 172 stakeholders
-
-Developers
--------
-Heavycoin has a strong developer backing who are comitted to its success. Over time we hope the Heavycoin developer community will grow larger and our long-term goal is to form an open source Heavycoin Foundation for promoting and developing Heavycoin over many years to come.  The current Heavycoin core developers are
-
-keccak512 / BM-NBuu8hBFdnqAeKs42Yg7nftB3QLfJ8ra
-
-nomisugi / BM-NBAsCmCqUYR8eaXgs8zebDNPw5rUyM1z
-
-The best way to contact us is using the BitMessage addresses above. 
-Warning: the handles above are our usernames on bitcointalk.org only.
-
-Bitcointalk Forum Thread: https://bitcointalk.org/index.php?topic=506774.0
-
-License
--------
-
-Bitcoin is released under the terms of the MIT license. See `COPYING` for more
-information or see http://opensource.org/licenses/MIT.
+Mining centralization is a problem for Bitcoin, Litecoin and most other 
+crypto-currencies. Increasingly, more and more transactions are mined by a 
+handful of big players with expensive, specialized hardware. When most 
+transaction processing is handled by a wealthy, small group, then this 
+threatens the crypto-currency's independence and the numerous benefits that 
+come from decentralization. To support the largest, most vibrant mining 
+community, Heavycoin introduces a novel ASIC-resistant cryptographic hash 
+function called HEFTY1. Initially this opened the door for thousands of 
+CPU-only miners to become early stakeholders. Currently HEFTY1 offers GPU 
+miners lean power consumption and low heat generation, which is great news 
+for keeping electricity costs low and profits high.
+### Features
+Early experiences in GPU mining Heavycoin indicate that there are currently 
+some unique advantages, including [lower power 
+consumption](https://bitcointalk.org/index.php?topic=167229.msg5721823#msg5721823) 
+and [cooler 
+operation](https://bitcointalk.org/index.php?topic=506774.msg5746513#msg5746513). 
+It is thought that this is due to HEFTY1 creating stalls in the GPU 
+implementations. Whether this is a permanent feature or just a temporary 
+advantage due to unoptimized GPU implementations is unknown at this stage. 
+- ASIC-resistant - Tiny memory footprint - Power efficient GPU mining - Low 
+temperature GPU mining
+### Security
+HEFTY1 is new and its security is not proven. Therefore, we deploy it in a 
+safe way that is provably at least as secure as the 4 main cryptographic 
+hash functions that protect Heavycoin. We use HEFTY1 as a secondary hash of 
+the input, while the original input is still hashed by SHA-256, Keccak-512, 
+Grøestl-512 and BLAKE-512. Specifically, for each secure cryptographic hash 
+function ![H](https://heavycoin.github.io/images/h-variable.png) in 
+(SHA-256, Keccak-512, Grøestl-512 and BLAKE-512), we use the following 
+collision avoiding construction.
+![Heavycoin(x) = H(x + 
+!HEFTY1(x))ROESTL(SKEIN(BLAKE(x))))](https://heavycoin.github.io/images/heavycoin-hash.png 
+!"We guarantee that the Heavycoin hash is always at least as good as 
+!SHA256, KECCAK, GROESTL and BLAKE")
+where is the concatenation operation. This means that even if HEFTY1 has 
+collisions, the input to 
+![H](https://heavycoin.github.io/images/h-variable.png) still contains the 
+original input and, therefore, will not collide.
+In this way HEFTY1 is only used for thwarting GPU miners, while the block chain is secured through the use of the 4 well-known cryptographic hash functions. In a highly unlikely worst case scenario where HEFTY1 is broken, then GPU-miners could obtain a speed advantage only. The block chain would still be secured through SHA-256, Keccak-512, Grøestl-512 and BLAKE-512.
