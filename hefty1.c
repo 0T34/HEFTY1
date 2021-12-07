@@ -93,78 +93,60 @@ const static uint32_t H[HEFTY1_STATE_WORDS] = {
     0x5be0cd19UL
 };
 
-static inline uint32_t Rr(uint32_t X, uint8_t n)
-{
-    return (X >> n) | (X << (32 - n));
-}
+#define Rr(X, n) (((X) >> (n)) | ((X) << (32 - (n))))
+#define Ch(E, F, G) ((E & F) ^ (~E & G))
 
-static inline uint32_t Ch(uint32_t E, uint32_t F, uint32_t G)
-{
-    return (E & F) ^ (~E & G);
-}
+#define Sigma1(E) ({                        \
+    uint32_t _E = (E);                      \
+    Rr(_E, 6) ^ Rr(_E, 11) ^ Rr(_E, 25);    \
+})
 
-static inline uint32_t Sigma1(uint32_t E)
-{
-    return Rr(E, 6) ^ Rr(E, 11) ^ Rr(E, 25);
-}
+#define sigma1(X) ({                        \
+    uint32_t _X = (X);                      \
+    Rr(_X, 17) ^ Rr(_X, 19) ^ (_X >> 10);   \
+})
 
-static inline uint32_t sigma1(uint32_t X)
-{
-    return Rr(X, 17) ^ Rr(X, 19) ^ (X >> 10);
-}
+#define Ma(A, B, C) ({                      \
+    uint32_t _A = (A);                      \
+    uint32_t _B = (B);                      \
+    uint32_t _C = (C);                      \
+    (_A & _B) ^ (_A & _C) ^ (_B & _C);      \
+})
 
-static inline uint32_t Ma(uint32_t A, uint32_t B, uint32_t C)
-{
-    return (A & B) ^ (A & C) ^ (B & C);
-}
+#define Sigma0(A) ({                        \
+    uint32_t _A = (A);                      \
+    Rr(_A, 2) ^ Rr(_A, 13) ^ Rr(_A, 22);    \
+})
 
-static inline uint32_t Sigma0(uint32_t A)
-{
-    return Rr(A, 2) ^ Rr(A, 13) ^ Rr(A, 22);
-}
+#define sigma0(X) ({                        \
+    uint32_t _X = (X);                      \
+    Rr(_X, 7) ^ Rr(_X, 18) ^ (_X >> 3);     \
+})
 
-static inline uint32_t sigma0(uint32_t X)
-{
-    return Rr(X, 7) ^ Rr(X, 18) ^ (X >> 3);
-}
-
-static inline uint32_t Reverse32(uint32_t n)
-{
-    #if BYTE_ORDER == LITTLE_ENDIAN
-        return n << 24 | (n & 0x0000ff00) << 8 | (n & 0x00ff0000) >> 8 | n >> 24;
-    #else
-        return n;
-    #endif
-}
-
-static inline uint64_t Reverse64(uint64_t n)
-{
-    #if BYTE_ORDER == LITTLE_ENDIAN
-        uint32_t a = n >> 32;
-        uint32_t b = (n << 32) >> 32;
-
-        return (uint64_t)Reverse32(b) << 32 | Reverse32(a);
-    #else
-        return n;
-    #endif
-}
+#if BYTE_ORDER == LITTLE_ENDIAN
+#define Reverse32(n) \
+    ((n) << 24 | ((n) & 0x0000ff00) << 8 | ((n) & 0x00ff0000) >> 8 | (n) >> 24)
+#define Reverse64(n) \
+    (uint64_t)Reverse32((((n) << 32) >> 32)) << 32 | Reverse32(((n) >> 32))
+#else
+    #define Reverse32(n) (n)
+    #define Reverse64(n) (n)
+#endif
 
 /* Smoosh byte into nibble */
-static inline uint8_t Smoosh4(uint8_t X)
-{
-    return (X >> 4) ^ (X & 0xf);
-}
+#define Smoosh4(X) ({                               \
+    uint8_t _X = (X);                               \
+    (_X >> 4) ^ (_X & 0xf);                         \
+})
 
 /* Smoosh 32-bit word into 2-bits */
-static inline uint8_t Smoosh2(uint32_t X)
-{
-    uint16_t w = (X >> 16) ^ (X & 0xffff);
-    uint8_t n = Smoosh4((w >> 8) ^ (w & 0xff));
-    return (n >> 2) ^ (n & 0x3);
-}
+#define Smoosh2(X) ({                               \
+    uint16_t w = ((X) >> 16) ^ ((X) & 0xffff);      \
+    uint8_t n = Smoosh4((w >> 8) ^ (w & 0xff));     \
+    ((n) >> 2) ^ (n & 0x3);                         \
+})
 
-static void Mangle(uint32_t *S)
-{
+static void Mangle(uint32_t *S) {
     uint32_t *R = S;
     uint32_t *C = &S[1];
 
@@ -178,8 +160,7 @@ static void Mangle(uint32_t *S)
     /* Diffuse */
     uint32_t tmp = 0;
     for (i = 0; i < HEFTY1_SPONGE_WORDS - 1; i++) {
-        uint8_t r = Smoosh2(tmp);
-        switch (r) {
+        switch (Smoosh2(tmp)) {
         case 0:
             C[i] ^= Rr(R[0], i + r0);
             break;
@@ -193,36 +174,37 @@ static void Mangle(uint32_t *S)
             C[i] ^= Rr(R[0], i + r3);
             break;
         }
+
         tmp ^= C[i];
     }
 
     /* Compress */
     tmp = 0;
-    for (i = 0; i < HEFTY1_SPONGE_WORDS - 1; i++)
-        if (i % 2)
+    for (i = 0; i < HEFTY1_SPONGE_WORDS - 1; i++) {
+        if (i % 2) {
             tmp ^= C[i];
-        else
+        } else {
             tmp += C[i];
+        }
+    }
+
     R[0] ^= tmp;
 }
 
-static void Absorb(uint32_t *S, uint32_t X)
-{
-    uint32_t *R = S;
-    R[0] ^= X;
-    Mangle(S);
-}
+#define Absorb(S, X) ({     \
+    uint32_t *R = (S);      \
+    R[0] ^= (X);            \
+    Mangle((S));            \
+})
 
-static uint32_t Squeeze(uint32_t *S)
-{
-    uint32_t Y = S[0];
-    Mangle(S);
-    return Y;
-}
+#define Squeeze(S) ({       \
+    uint32_t Y = (S[0]);    \
+    Mangle(S);              \
+    Y;                      \
+})
 
 /* Branch, compress and serialize function */
-static inline uint32_t Br(HEFTY1_CTX *ctx, uint32_t X)
-{
+static uint32_t Br(HEFTY1_CTX *ctx, uint32_t X) {
     uint32_t R = Squeeze(ctx->sponge);
 
     uint8_t r0 = R >> 8;
@@ -230,10 +212,8 @@ static inline uint32_t Br(HEFTY1_CTX *ctx, uint32_t X)
 
     uint32_t Y = 1 << (r0 % 32);
 
-    switch (r1 % 4)
-    {
+    switch (r1 % 4) {
     case 0:
-        /* Do nothing */
         break;
     case 1:
         return X & ~Y;
@@ -246,8 +226,7 @@ static inline uint32_t Br(HEFTY1_CTX *ctx, uint32_t X)
     return X;
 }
 
-static void HashBlock(HEFTY1_CTX *ctx)
-{
+static void HashBlock(HEFTY1_CTX *ctx) {
     uint32_t A, B, C, D, E, F, G, H;
     uint32_t W[HEFTY1_BLOCK_BYTES];
 
@@ -262,8 +241,8 @@ static void HashBlock(HEFTY1_CTX *ctx)
     G = ctx->h[6];
     H = ctx->h[7];
 
-    int t = 0;
-    for (; t < 16; t++) {
+    int t;
+    for (t = 0; t < 16; t++) {
         W[t] = Reverse32(((uint32_t *)&ctx->block[0])[t]); /* To host byte order */
         Absorb(ctx->sponge, W[t] ^ K[t]);
     }
@@ -300,9 +279,7 @@ static void HashBlock(HEFTY1_CTX *ctx)
 }
 
 /* Public interface */
-
-void HEFTY1_Init(HEFTY1_CTX *ctx)
-{
+void HEFTY1_Init(HEFTY1_CTX *ctx) {
     assert(ctx);
 
     memcpy(ctx->h, H, sizeof(ctx->h));
@@ -311,26 +288,27 @@ void HEFTY1_Init(HEFTY1_CTX *ctx)
     memset(ctx->sponge, 0, sizeof(ctx->sponge));
 }
 
-void HEFTY1_Update(HEFTY1_CTX *ctx, const void *buf, size_t len)
-{
+void HEFTY1_Update(HEFTY1_CTX *ctx, const void *buf, size_t len) {
     assert(ctx);
 
     uint64_t read = 0;
+    uint64_t end;
+    uint64_t count;
     while (len) {
-        uint64_t end = ctx->written % HEFTY1_BLOCK_BYTES;
-        uint64_t count = Min(len, HEFTY1_BLOCK_BYTES - end);
-        memcpy(&ctx->block[end], &((unsigned char *)buf)[read], count);
+        end = ctx->written % HEFTY1_BLOCK_BYTES;
+        count = Min(len, HEFTY1_BLOCK_BYTES - end);
+        memcpy(&ctx->block[end], &((uint8_t *)buf)[read], count);
         len -= count;
         read += count;
         ctx->written += count;
-        if (!(ctx->written % HEFTY1_BLOCK_BYTES))
+        if (!(ctx->written % HEFTY1_BLOCK_BYTES)) {
             HashBlock(ctx);
+        }
     }
 }
 
-void HEFTY1_Final(unsigned char *digest, HEFTY1_CTX *ctx)
-{
-    assert(digest);
+void HEFTY1_Final(uint8_t d[HEFTY1_DIGEST_BYTES], HEFTY1_CTX *ctx) {
+    assert(d);
     assert(ctx);
 
     /* Pad message (FIPS 180 Section 5.1.1) */
@@ -354,25 +332,19 @@ void HEFTY1_Final(unsigned char *digest, HEFTY1_CTX *ctx)
     HashBlock(ctx);
 
     /* Convert back to network byte order */
-    int i = 0;
-    for (; i < HEFTY1_STATE_WORDS; i++)
+    int i;
+    for (i = 0; i < HEFTY1_STATE_WORDS; i++) {
         ctx->h[i] = Reverse32(ctx->h[i]);
+    }
 
-    memcpy(digest, ctx->h, sizeof(ctx->h));
+    memcpy(d, ctx->h, sizeof(ctx->h));
     memset(ctx, 0, sizeof(HEFTY1_CTX));
 }
 
-unsigned char* HEFTY1(const unsigned char *buf, size_t len, unsigned char *digest)
-{
+void HEFTY1_Buf(const void *in, size_t len, uint8_t d[HEFTY1_DIGEST_BYTES]) {
     HEFTY1_CTX ctx;
-    static unsigned char m[HEFTY1_DIGEST_BYTES];
-
-    if (!digest)
-        digest = m;
 
     HEFTY1_Init(&ctx);
-    HEFTY1_Update(&ctx, buf, len);
-    HEFTY1_Final(digest, &ctx);
-
-    return digest;
+    HEFTY1_Update(&ctx, in, len);
+    HEFTY1_Final(d, &ctx);
 }

@@ -32,15 +32,7 @@
 #ifndef __HEFTY1_H__
 #define __HEFTY1_H__
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#ifndef WIN32
-#include <sys/types.h>
-#endif
-
-#include <inttypes.h>
+#include <stdint.h>
 
 #define HEFTY1_DIGEST_BYTES 32
 #define HEFTY1_BLOCK_BYTES 64
@@ -54,13 +46,9 @@ typedef struct HEFTY1_CTX {
     uint32_t sponge[HEFTY1_SPONGE_WORDS];
 } HEFTY1_CTX;
 
-void HEFTY1_Init(HEFTY1_CTX *cxt);
-void HEFTY1_Update(HEFTY1_CTX *cxt, const void *data, size_t len);
-void HEFTY1_Final(unsigned char *digest, HEFTY1_CTX *cxt);
-unsigned char* HEFTY1(const unsigned char *data, size_t len, unsigned char *digest);
-
-#ifdef __cplusplus
-}
-#endif
+void HEFTY1_Init(HEFTY1_CTX *ctx);
+void HEFTY1_Update(HEFTY1_CTX *ctx, const void *data, size_t len);
+void HEFTY1_Final(uint8_t d[HEFTY1_DIGEST_BYTES], HEFTY1_CTX *ctx);
+void HEFTY1_Buf(const void *in, size_t len, uint8_t d[HEFTY1_DIGEST_BYTES]);
 
 #endif /* __HEFTY1_H__ */
